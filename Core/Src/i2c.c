@@ -39,7 +39,7 @@ void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 400000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -55,6 +55,91 @@ void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 2 */
 
+}
+
+static void HAL_I2C_ClearBusyFlagErrata_2_14_7(I2C_HandleTypeDef *hi2c) 
+{
+
+#define SDA_PIN GPIO_PIN_7
+#define SCL_PIN GPIO_PIN_6
+	static uint8_t resetTried = 0;
+	if (resetTried == 1) {
+		return ;
+	}
+
+	if (!(hi2c->Instance->SR2 | 0x02))
+		return;
+
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+	// 1
+	__HAL_I2C_DISABLE(hi2c);
+
+	// 2
+	GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_6;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	GPIOB->ODR |= SDA_PIN;
+	GPIOB->ODR |= SCL_PIN;
+
+	// 3
+	while (HAL_GPIO_ReadPin(GPIOB, SDA_PIN) == GPIO_PIN_RESET);
+	while (HAL_GPIO_ReadPin(GPIOB, SCL_PIN) == GPIO_PIN_RESET);
+
+	// 4
+	GPIO_InitStruct.Pin = SDA_PIN;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	GPIOB->ODR &= ~SDA_PIN;
+
+	// 5
+	while (HAL_GPIO_ReadPin(GPIOB, SDA_PIN) == GPIO_PIN_SET);
+
+	// 6
+	GPIO_InitStruct.Pin = SCL_PIN;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	GPIOB->ODR &= ~SCL_PIN;
+
+	// 7
+	while (HAL_GPIO_ReadPin(GPIOB, SCL_PIN) == GPIO_PIN_SET);
+
+	// 8
+	GPIO_InitStruct.Pin = SCL_PIN;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	GPIOB->ODR |= SCL_PIN;
+
+	// 9
+	while (HAL_GPIO_ReadPin(GPIOB, SCL_PIN) == GPIO_PIN_RESET);
+
+	// 10
+	GPIO_InitStruct.Pin = SDA_PIN;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	GPIOB->ODR |= SDA_PIN;
+
+	// 11
+	while (HAL_GPIO_ReadPin(GPIOB, SDA_PIN) == GPIO_PIN_RESET);
+
+	// 12
+	GPIO_InitStruct.Pin = SDA_PIN|SCL_PIN;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+	// 13
+	hi2c->Instance->CR1 |= I2C_CR1_SWRST;
+
+	// 14
+	hi2c->Instance->CR1 ^= I2C_CR1_SWRST;
+
+	// 15
+	__HAL_I2C_ENABLE(hi2c);
+
+	resetTried = 1;
 }
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
@@ -77,8 +162,17 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    /* for i2c fix bus */
+
+    i2cHandle->Instance->CR1 &= ~I2C_CR1_PE;
+
+    /* endfix */
+
+
     /* I2C1 clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
+
+    HAL_I2C_ClearBusyFlagErrata_2_14_7(i2cHandle);
 
     /* I2C1 DMA Init */
     /* I2C1_TX Init */

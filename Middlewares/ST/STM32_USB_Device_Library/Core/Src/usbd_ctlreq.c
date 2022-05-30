@@ -92,6 +92,9 @@ static void USBD_SetFeature(USBD_HandleTypeDef *pdev,
 static void USBD_ClrFeature(USBD_HandleTypeDef *pdev,
                             USBD_SetupReqTypedef *req);
 
+static void USBD_WinUSBDesc(USBD_HandleTypeDef *pdev,
+                            USBD_SetupReqTypedef *req);
+
 static uint8_t USBD_GetLen(uint8_t *buf);
 
 /**
@@ -120,9 +123,15 @@ USBD_StatusTypeDef  USBD_StdDevReq(USBD_HandleTypeDef *pdev,
   {
     case USB_REQ_TYPE_CLASS:
     case USB_REQ_TYPE_VENDOR:
-      pdev->pClass->Setup(pdev, req);
-      break;
-
+	    switch (req->bRequest) {
+	    case USB_REQ_MS_VENDOR_CODE:
+		    USBD_WinUSBDesc(pdev, req);
+		    break;
+	    default:
+		    pdev->pClass->Setup(pdev, req);
+		    break;
+	    }
+	    break;
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest)
       {
@@ -153,7 +162,6 @@ USBD_StatusTypeDef  USBD_StdDevReq(USBD_HandleTypeDef *pdev,
         case USB_REQ_CLEAR_FEATURE:
           USBD_ClrFeature(pdev, req);
           break;
-
         default:
           USBD_CtlError(pdev, req);
           break;
@@ -456,7 +464,19 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev,
           }
           break;
 
-        case USBD_IDX_MFC_STR:
+	case USBD_IDX_MOD_STR:
+	  if (pdev->pDesc->GetMODStrDescriptor != NULL)
+	  {
+		  pbuf = pdev->pDesc->GetMODStrDescriptor(pdev->dev_speed, &len);
+	  }
+	  else
+	  {
+		  USBD_CtlError(pdev, req);
+		  err++;
+	  }
+	  break;
+
+	case USBD_IDX_MFC_STR:
           if (pdev->pDesc->GetManufacturerStrDescriptor != NULL)
           {
             pbuf = pdev->pDesc->GetManufacturerStrDescriptor(pdev->dev_speed, &len);
@@ -794,6 +814,35 @@ static void USBD_SetFeature(USBD_HandleTypeDef *pdev,
   }
 }
 
+static void USBD_WinUSBDesc(USBD_HandleTypeDef *pdev,
+                            USBD_SetupReqTypedef *req)
+{
+	uint16_t len;
+	uint8_t *pbuf;
+
+	switch (req->wIndex) {
+	case 0x04: // compat ID
+		if (pdev->pDesc->GetWinUSBDescriptor) {
+			pbuf = pdev->pDesc->GetWinUSBDescriptor(pdev->dev_speed, &len);
+			break;
+		} else {
+			USBD_CtlError(pdev, req);
+			return;
+		}
+	default:
+		USBD_CtlError(pdev, req);
+		return;
+	}
+
+	if((len != 0)&& (req->wLength != 0))
+	{
+
+		len = MIN(len , req->wLength);
+
+		USBD_CtlSendData(pdev, pbuf, len);
+	}
+
+}
 
 /**
 * @brief  USBD_ClrFeature

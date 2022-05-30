@@ -62,13 +62,14 @@
   * @{
   */
 
-#define USBD_VID     1155
-#define USBD_LANGID_STRING     1033
-#define USBD_MANUFACTURER_STRING     "STMicroelectronics"
-#define USBD_PID_FS     22336
-#define USBD_PRODUCT_STRING_FS     "STM32 Virtual ComPort"
-#define USBD_CONFIGURATION_STRING_FS     "CDC Config"
-#define USBD_INTERFACE_STRING_FS     "CDC Interface"
+#define USBD_VID		     0x9347
+#define USBD_LANGID_STRING	     1033
+#define USBD_MANUFACTURER_STRING     "ShengJian Technology"
+#define USBD_MOD_STRING		     "WINUSB"
+#define USBD_PID_FS		     0x0322
+#define USBD_PRODUCT_STRING_FS	     "ShengJian eltags"
+#define USBD_CONFIGURATION_STRING_FS "Config"
+#define USBD_INTERFACE_STRING_FS     "Interface"
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
 
@@ -119,6 +120,8 @@ uint8_t * USBD_FS_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length
 uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 uint8_t * USBD_FS_ConfigStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 uint8_t * USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t * USBD_FS_MOD_StrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t *USBD_FS_WINUSB_Descriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 
 /**
   * @}
@@ -138,6 +141,8 @@ USBD_DescriptorsTypeDef FS_Desc =
 , USBD_FS_SerialStrDescriptor
 , USBD_FS_ConfigStrDescriptor
 , USBD_FS_InterfaceStrDescriptor
+, USBD_FS_MOD_StrDescriptor
+, USBD_FS_WINUSB_Descriptor
 };
 
 #if defined ( __ICCARM__ ) /* IAR Compiler */
@@ -150,8 +155,8 @@ __ALIGN_BEGIN uint8_t USBD_FS_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
   USB_DESC_TYPE_DEVICE,       /*bDescriptorType*/
   0x00,                       /*bcdUSB */
   0x02,
-  0x02,                       /*bDeviceClass*/
-  0x02,                       /*bDeviceSubClass*/
+  0xff,                       /*bDeviceClass*/
+  0xff,                       /*bDeviceSubClass*/
   0x00,                       /*bDeviceProtocol*/
   USB_MAX_EP0_SIZE,           /*bMaxPacketSize*/
   LOBYTE(USBD_VID),           /*idVendor*/
@@ -164,6 +169,26 @@ __ALIGN_BEGIN uint8_t USBD_FS_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END =
   USBD_IDX_PRODUCT_STR,       /*Index of product string*/
   USBD_IDX_SERIAL_STR,        /*Index of serial number string*/
   USBD_MAX_NUM_CONFIGURATION  /*bNumConfigurations*/
+};
+
+static const uint8_t USBD_MODDesc[USB_LEN_MOD_DESC_SIZ] = {
+	'M', 'S', 'F', 'T', '1', '0', '0', USB_REQ_MS_VENDOR_CODE,
+};
+
+
+#define USB_LEN_WINUSB_DESC_LEN 0x28
+__ALIGN_BEGIN uint8_t USBD_WINUSB_OS_DESC[USB_LEN_WINUSB_DESC_LEN] __ALIGN_END = {
+	0x28, 0, 0, 0, // length
+	0, 1, // bcd version 1.0
+	4, 0, // windex: extended compat ID descritor
+	1, // no of function
+	0, 0, 0, 0, 0, 0, 0, // reserve 7 bytes
+			     // function
+	0, // interface no
+	0, // reserved
+	'W', 'I', 'N', 'U', 'S', 'B', 0, 0, //  first ID
+	0, 0, 0, 0, 0, 0, 0, 0, // second ID
+	0, 0, 0, 0, 0, 0 // reserved 6 bytes
 };
 
 /* USB_DeviceDescriptor */
@@ -256,6 +281,27 @@ uint8_t * USBD_FS_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length
     USBD_GetString((uint8_t *)USBD_PRODUCT_STRING_FS, USBD_StrDesc, length);
   }
   return USBD_StrDesc;
+}
+
+/**
+  * @brief  Return the MOD string descriptor
+  * @param  speed : Current device speed
+  * @param  length : Pointer to data length variable
+  * @retval Pointer to descriptor buffer
+  */
+uint8_t * USBD_FS_MOD_StrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+  UNUSED(speed);
+  USBD_GetString((uint8_t *)USBD_MODDesc, USBD_StrDesc, length);
+  return USBD_StrDesc;
+}
+
+uint8_t *USBD_FS_WINUSB_Descriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+  UNUSED(speed);
+  *length = USB_LEN_WINUSB_DESC_LEN;
+
+  return USBD_WINUSB_OS_DESC;
 }
 
 /**

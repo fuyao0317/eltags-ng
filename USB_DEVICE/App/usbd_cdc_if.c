@@ -20,7 +20,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
-
+#include "main.h"
+#include "string.h"
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
@@ -259,8 +260,28 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+	uint32_t i;
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+  for (i = 0; i < *Len; i++) {
+	  unsigned char *next_buf_rec;
+
+	  if (pusb_rec >= usb_buf_end)
+		  next_buf_rec = usb_buf_start;
+	  else
+		  next_buf_rec = pusb_rec + 1;
+
+	  if (next_buf_rec == pusb_handle) {
+		  /* over flow skip it*/
+		  return USBD_OK;
+	  }
+
+	  *pusb_rec = Buf[i];
+	  pusb_rec = next_buf_rec;
+
+  }
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }

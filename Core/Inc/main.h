@@ -58,6 +58,13 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
+extern unsigned char usb_buf[];
+extern unsigned char *pusb_rec;
+extern unsigned char *pusb_handle;
+
+#define usb_buf_start (&usb_buf[0])
+#define usb_buf_end   (&usb_buf[APP_RX_DATA_SIZE - 1])
+
 
 /* USER CODE END Private defines */
 

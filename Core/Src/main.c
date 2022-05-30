@@ -22,6 +22,8 @@
 #include "i2c.h"
 #include "usb_device.h"
 #include "gpio.h"
+#include "lcd.h"
+#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,6 +61,19 @@ void SystemClock_Config(void);
 
 /* USER CODE END 0 */
 
+unsigned char usb_buf[APP_RX_DATA_SIZE];
+unsigned char *pusb_rec = usb_buf;
+unsigned char *pusb_handle = usb_buf;
+
+static void app_handle_usb_data(unsigned char s)
+{
+	if (s == 0) {
+		lcd_flush();
+	} else {
+		lcd_put_char(s);
+	}
+}
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -91,6 +106,9 @@ int main(void)
   MX_I2C1_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+  OLED_init();
+  lcd_flush();
+  lcd_put_string("CYG PLATFORM\n\nLINUX DEBUG TOOLS\n\nBY: FUAYO");
 
   /* USER CODE END 2 */
 
@@ -99,6 +117,28 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
+	  if (pusb_rec != pusb_handle) {
+		  unsigned char *next_pusb_handle;
+		  unsigned char byte;
+
+		  if (pusb_handle == usb_buf_end)
+			  next_pusb_handle = usb_buf_start;
+
+		  else
+			  next_pusb_handle = pusb_handle + 1;
+
+		  byte = *pusb_handle;
+		  pusb_handle = next_pusb_handle;
+
+		  app_handle_usb_data(byte);
+
+	  }
+	  /* HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); */
+	  /*
+	   * Picture_ReverseDisplay();
+	   * HAL_Delay(1000);
+	   */
 
     /* USER CODE BEGIN 3 */
   }
@@ -149,7 +189,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_1);
+  HAL_RCC_MCOConfig(RCC_MCO, RCC_MCO1SOURCE_HSE, RCC_MCODIV_1);
 }
 
 /* USER CODE BEGIN 4 */

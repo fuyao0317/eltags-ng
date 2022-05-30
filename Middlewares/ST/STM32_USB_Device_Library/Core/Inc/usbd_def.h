@@ -73,6 +73,7 @@ extern "C" {
 #define  USB_LEN_OTG_DESC                               0x03U
 #define  USB_LEN_LANGID_STR_DESC                        0x04U
 #define  USB_LEN_OTHER_SPEED_DESC_SIZ                   0x09U
+#define  USB_LEN_MOD_DESC_SIZ                           0x08U
 
 #define  USBD_IDX_LANGID_STR                            0x00U
 #define  USBD_IDX_MFC_STR                               0x01U
@@ -80,6 +81,7 @@ extern "C" {
 #define  USBD_IDX_SERIAL_STR                            0x03U
 #define  USBD_IDX_CONFIG_STR                            0x04U
 #define  USBD_IDX_INTERFACE_STR                         0x05U
+#define  USBD_IDX_MOD_STR                               0xeeU
 
 #define  USB_REQ_TYPE_STANDARD                          0x00U
 #define  USB_REQ_TYPE_CLASS                             0x20U
@@ -102,6 +104,7 @@ extern "C" {
 #define  USB_REQ_GET_INTERFACE                          0x0AU
 #define  USB_REQ_SET_INTERFACE                          0x0BU
 #define  USB_REQ_SYNCH_FRAME                            0x0CU
+#define  USB_REQ_MS_VENDOR_CODE				0xA0U
 
 #define  USB_DESC_TYPE_DEVICE                           0x01U
 #define  USB_DESC_TYPE_CONFIGURATION                    0x02U
@@ -218,6 +221,9 @@ typedef struct
   uint8_t  *(*GetSerialStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
   uint8_t  *(*GetConfigurationStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
   uint8_t  *(*GetInterfaceStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  /* Get Microsoft Os Descrition */
+  uint8_t  *(*GetMODStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t  *(*GetWinUSBDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
 #if (USBD_LPM_ENABLED == 1U)
   uint8_t  *(*GetBOSDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
 #endif

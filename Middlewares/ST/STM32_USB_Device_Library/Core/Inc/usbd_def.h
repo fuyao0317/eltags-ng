@@ -224,6 +224,7 @@ typedef struct
   /* Get Microsoft Os Descrition */
   uint8_t  *(*GetMODStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
   uint8_t  *(*GetWinUSBDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
+  uint8_t  *(*GetWinUSBInterfaceDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
 #if (USBD_LPM_ENABLED == 1U)
   uint8_t  *(*GetBOSDescriptor)(USBD_SpeedTypeDef speed, uint16_t *length);
 #endif

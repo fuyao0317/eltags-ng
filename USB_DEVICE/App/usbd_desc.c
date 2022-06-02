@@ -66,8 +66,8 @@
 #define USBD_LANGID_STRING	     1033
 #define USBD_MANUFACTURER_STRING     "ShengJian Technology"
 #define USBD_MOD_STRING		     "WINUSB"
-#define USBD_PID_FS		     0x0322
-#define USBD_PRODUCT_STRING_FS	     "ShengJian eltags"
+#define USBD_PID_FS		     0x2222
+#define USBD_PRODUCT_STRING_FS	     "eltags"
 #define USBD_CONFIGURATION_STRING_FS "Config"
 #define USBD_INTERFACE_STRING_FS     "Interface"
 
@@ -122,6 +122,7 @@ uint8_t * USBD_FS_ConfigStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
 uint8_t * USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 uint8_t * USBD_FS_MOD_StrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 uint8_t *USBD_FS_WINUSB_Descriptor(USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t *USBD_FS_WINUSB_InterfaceDesc(USBD_SpeedTypeDef speed, uint16_t *length);
 
 /**
   * @}
@@ -143,6 +144,7 @@ USBD_DescriptorsTypeDef FS_Desc =
 , USBD_FS_InterfaceStrDescriptor
 , USBD_FS_MOD_StrDescriptor
 , USBD_FS_WINUSB_Descriptor
+, USBD_FS_WINUSB_InterfaceDesc
 };
 
 #if defined ( __ICCARM__ ) /* IAR Compiler */
@@ -189,6 +191,80 @@ __ALIGN_BEGIN uint8_t USBD_WINUSB_OS_DESC[USB_LEN_WINUSB_DESC_LEN] __ALIGN_END =
 	'W', 'I', 'N', 'U', 'S', 'B', 0, 0, //  first ID
 	0, 0, 0, 0, 0, 0, 0, 0, // second ID
 	0, 0, 0, 0, 0, 0 // reserved 6 bytes
+};
+
+#define USB_LEN_OS_PROPERTY_DESC 0x8E
+__ALIGN_BEGIN uint8_t USBD_WINUSB_OSPropertyDesc[USB_LEN_OS_PROPERTY_DESC] __ALIGN_END =
+{
+      0x8E, 0, 0, 0,  // length 246 byte
+      0x00, 0x01,   // BCD version 1.0
+      0x05, 0x00,   // Extended Property Descriptor Index(5)
+      0x01, 0x00,   // number of section (1)
+//; property section        
+      0x84, 0x00, 0x00, 0x00,   // size of property section
+      0x1, 0, 0, 0,   //; property data type (1)
+      0x28, 0,        //; property name length (42)
+      'D', 0,
+      'e', 0,
+      'v', 0,
+      'i', 0,
+      'c', 0,
+      'e', 0,
+      'I', 0,
+      'n', 0,
+      't', 0,
+      'e', 0,
+      'r', 0,
+      'f', 0,
+      'a', 0,
+      'c', 0,
+      'e', 0,
+      'G', 0,
+      'U', 0,
+      'I', 0,
+      'D', 0,
+      0, 0,
+      // D6805E56-0447-4049-9848-46D6B2AC5D28
+      0x4E, 0, 0, 0,  // ; property data length
+      '{', 0,
+      '1', 0,
+      '3', 0,
+      'E', 0,
+      'B', 0,
+      '3', 0,
+      '6', 0,
+      '0', 0,
+      'B', 0,
+      '-', 0,
+      'B', 0,
+      'C', 0,
+      '1', 0,
+      'E', 0,
+      '-', 0,
+      '4', 0,
+      '6', 0,
+      'C', 0,
+      'B', 0,
+      '-', 0,
+      'A', 0,
+      'C', 0,
+      '8', 0,
+      'B', 0,
+      '-', 0,
+      'E', 0,
+      'F', 0,
+      '3', 0,
+      'D', 0,
+      'A', 0,
+      '4', 0,
+      '7', 0,
+      'B', 0,
+      '4', 0,
+      '0', 0,
+      '6', 0,
+      '2', 0,
+      '}', 0,
+      0, 0,
 };
 
 /* USB_DeviceDescriptor */
@@ -302,6 +378,15 @@ uint8_t *USBD_FS_WINUSB_Descriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   *length = USB_LEN_WINUSB_DESC_LEN;
 
   return USBD_WINUSB_OS_DESC;
+}
+
+uint8_t *USBD_FS_WINUSB_InterfaceDesc(USBD_SpeedTypeDef speed, uint16_t *length)
+{
+  UNUSED(speed);
+
+  *length = USB_LEN_OS_PROPERTY_DESC;
+
+  return USBD_WINUSB_OSPropertyDesc;
 }
 
 /**

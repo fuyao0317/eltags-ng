@@ -72,7 +72,7 @@ static void HAL_I2C_ClearBusyFlagErrata_2_14_7(I2C_HandleTypeDef *hi2c)
 
 	GPIO_InitTypeDef GPIO_InitStruct;
 
-	// 1
+	/* 1 */
 	__HAL_I2C_DISABLE(hi2c);
 
 	// 2

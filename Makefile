@@ -42,7 +42,8 @@ Core/Src/dma.c \
 Core/Src/i2c.c \
 Core/Src/stm32f1xx_it.c \
 Core/Src/stm32f1xx_hal_msp.c \
-Core/src/lcd.c\
+Core/Src/lcd.c\
+Core/Src/display.c\
 Core/lib/font.c\
 USB_DEVICE/App/usb_device.c \
 USB_DEVICE/App/usbd_desc.c \

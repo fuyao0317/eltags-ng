@@ -178,7 +178,6 @@ static int8_t CDC_DeInit_FS(void)
   */
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
-  /* USER CODE BEGIN 5 */
   switch(cmd)
   {
     case CDC_SEND_ENCAPSULATED_COMMAND:
@@ -261,25 +260,24 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
 	uint32_t i;
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
-  for (i = 0; i < *Len; i++) {
-	  unsigned char *next_buf_rec;
+	USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
 
-	  if (pusb_rec >= usb_buf_end)
-		  next_buf_rec = usb_buf_start;
-	  else
-		  next_buf_rec = pusb_rec + 1;
+	for (i = 0; i < *Len; i++) {
+		unsigned char *next_buf_rec;
 
-	  if (next_buf_rec == pusb_handle) {
-		  /* over flow skip it*/
-		  return USBD_OK;
-	  }
+		if (pusb_rec >= usb_buf_end)
+			next_buf_rec = usb_buf_start;
+		else
+			next_buf_rec = pusb_rec + 1;
 
-	  *pusb_rec = Buf[i];
-	  pusb_rec = next_buf_rec;
+		if (next_buf_rec == pusb_handle) {
+			/* over flow skip it*/
+			return USBD_OK;
+		}
 
+		*pusb_rec = Buf[i];
+		pusb_rec = next_buf_rec;
   }
 
   return (USBD_OK);

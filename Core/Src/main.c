@@ -25,6 +25,7 @@
 #include "lcd.h"
 #include "usbd_cdc_if.h"
 
+extern USBD_HandleTypeDef hUsbDeviceFS;
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -52,6 +53,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void handle_protocol_data(unsigned char c);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -61,7 +63,7 @@ void SystemClock_Config(void);
 
 /* USER CODE END 0 */
 
-unsigned char usb_buf[APP_RX_DATA_SIZE];
+unsigned char usb_buf[RX_DATA_SIZE];
 unsigned char *pusb_rec = usb_buf;
 unsigned char *pusb_handle = usb_buf;
 
@@ -108,7 +110,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   OLED_init();
   lcd_flush();
-  lcd_put_string("CYG PLATFORM\n\nLINUX DEBUG TOOLS\n\nBY: FUAYO");
+  lcd_put_string("CYG PLATFORM\n\nLINUX DEBUG TOOLS\n\nBY: YAO");
 
   /* USER CODE END 2 */
 
@@ -118,7 +120,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-	  if (pusb_rec != pusb_handle) {
+	  while (pusb_rec != pusb_handle) {
 		  unsigned char *next_pusb_handle;
 		  unsigned char byte;
 
@@ -131,9 +133,12 @@ int main(void)
 		  byte = *pusb_handle;
 		  pusb_handle = next_pusb_handle;
 
+		  /* handle_protocol_data(byte); */
 		  app_handle_usb_data(byte);
-
 	  }
+
+	  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
 	  /* HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); */
 	  /*
 	   * Picture_ReverseDisplay();

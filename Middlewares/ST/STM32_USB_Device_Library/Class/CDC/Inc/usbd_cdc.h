@@ -115,6 +115,7 @@ typedef struct
   uint8_t  CmdLength;
   uint8_t  *RxBuffer;
   uint8_t  *TxBuffer;
+  uint8_t  *CmdBuffer;
   uint32_t RxLength;
   uint32_t TxLength;
 

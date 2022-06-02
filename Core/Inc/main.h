@@ -62,9 +62,13 @@ extern unsigned char usb_buf[];
 extern unsigned char *pusb_rec;
 extern unsigned char *pusb_handle;
 
-#define usb_buf_start (&usb_buf[0])
-#define usb_buf_end   (&usb_buf[APP_RX_DATA_SIZE - 1])
+#define RX_DATA_SIZE 1500
 
+#define usb_buf_start (&usb_buf[0])
+#define usb_buf_end   (&usb_buf[RX_DATA_SIZE - 1])
+
+
+#define PROTOCOL_TYPE_CLEAR 0
 
 /* USER CODE END Private defines */
 

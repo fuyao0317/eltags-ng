@@ -829,6 +829,15 @@ static void USBD_WinUSBDesc(USBD_HandleTypeDef *pdev,
 			USBD_CtlError(pdev, req);
 			return;
 		}
+	case 0x05:
+		if (pdev->pDesc->GetWinUSBInterfaceDescriptor) {
+			pbuf = pdev->pDesc->GetWinUSBInterfaceDescriptor(pdev->dev_speed, &len);
+			break;
+		} else {
+			USBD_CtlError(pdev, req);
+			return;
+		}
+		break;
 	default:
 		USBD_CtlError(pdev, req);
 		return;

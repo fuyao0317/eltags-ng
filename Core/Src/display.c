@@ -5,60 +5,77 @@
 #include "main.h"
 #include "lcd.h"
 
+#define DISPLAY_Y_HIGHT 64
 #define DISPLAY_X_WIDTH 128
-#define DISPLAY_Y_WIDTH (64 / 8)
-#define FRAME_DATA_MAX_LEN  256
 
-static unsigned char display[DISPLAY_Y_WIDTH][DISPLAY_X_WIDTH];
+#define DISPLAY_Y_WIDTH (DISPLAY_Y_HIGHT / 8)
+#define FRAME_DATA_MAX_LEN  250
+
+static unsigned char frame[FRAME_DATA_MAX_LEN];
 
 static int x_idx, y_idx, scroll;
 
 static void display_zero(void)
 {
-	memset((void *)display, 0, sizeof(display));
 	x_idx = 0;
 	y_idx = 0;
 	scroll = 0;
 }
 
+static void display_clear_y(int y)
+{
+	int i;
+
+	Page_set(y);
+	Column_set(0);
+
+	for (i = 0; i < DISPLAY_X_WIDTH; i++) {
+		OLED_send_data(0);
+	}
+}
+
 static void display_fill_raw_zero(int y)
 {
-	int i = 0;
-
 	if (y >= DISPLAY_Y_WIDTH)
 		return;
 
 	y = y & (~0x01);
 
-	for (i = 0; i < DISPLAY_X_WIDTH; i++) {
-		display[y][i] = 0;
-		display[y + 1][i] = 0;
-	}
+	display_clear_y(y);
+	display_clear_y(y + 1);
+}
+
+static void display_buf_x_y(int x, int y, unsigned char *buf, int len)
+{
+	int i;
+
+	Page_set(x);
+	Column_set(y);
+
+	for (i = 0; i < len; i++)
+		OLED_send_data(buf[i]);
 }
 
 void display_one_char_fill(unsigned char *buf, int len)
 {
-	int i;
+	int fw = len >> 1;
 
-	if (len & 0x01) {
+	if ((len & 0x01) || (len == 0)) {
 		/* bug, buf must be 2* */
 		return ;
 	}
 
-	if ((len >> 1) + x_idx >= DISPLAY_X_WIDTH) {
+	if ((len >> 1) + x_idx > DISPLAY_X_WIDTH) {
 		x_idx = 0;
 		y_idx = (y_idx + 2) % DISPLAY_Y_WIDTH;
 
 		display_fill_raw_zero(y_idx);
 	}
 
-	for (i = 0; i < len; i++) {
-		if (len & 0x01) {
-			display[y_idx + 1][x_idx++] = buf[len];
-		} else {
-			display[y_idx][x_idx] = buf[len];
-		}
-	}
+	display_buf_x_y(y_idx, x_idx, buf, fw);
+	display_buf_x_y(y_idx + 1, x_idx, buf + fw, fw);
+
+	x_idx += fw;
 }
 
 void display_cr_lf(void)
@@ -69,45 +86,79 @@ void display_cr_lf(void)
 	display_fill_raw_zero(y_idx);
 }
 
-void handle_char_eng_buf(unsigned char *Buf, int Len)
+static void handle_english_put(unsigned char *buf, unsigned char len)
 {
 	int i;
-
-	for (i = 0; i < Len; i++) {
-		unsigned char *next_buf_rec;
-
-		if (pusb_rec >= usb_buf_end)
-			next_buf_rec = usb_buf_start;
-		else
-			next_buf_rec = pusb_rec + 1;
-
-		if (next_buf_rec == pusb_handle) {
-			/* over flow skip it*/
-			return;
-		}
-
-		*pusb_rec = Buf[i];
-		pusb_rec = next_buf_rec;
+	for (i = 0; i < len; i++) {
+		lcd_put_char(buf[i]);
 	}
 }
 
-void handle_zero_data(unsigned int type)
+static void scroll_screen(int last_y)
 {
-	switch (type) {
+	if (last_y != y_idx  && (y_idx << 3) == scroll) {
+		scroll = (scroll + 16) % DISPLAY_Y_HIGHT;
+		OLED_start_line_set(scroll);
+	}
+}
+
+static void handle_hanzi_put(uint8_t *buf, uint8_t len, unsigned char type)
+{
+
+	int y = y_idx;
+
+	if (type & 0xf0)
+		display_cr_lf();
+
+	display_one_char_fill(buf, len);
+
+	scroll_screen(y);
+}
+
+static void lcd_to_default_setting(void)
+{
+	lcd_flush();
+	display_zero();
+}
+
+static void packet_handle(unsigned char *buf, unsigned char len, unsigned char type)
+{
+	static unsigned char last_mode = PROTOCOL_TYPE_CLEAR;
+	unsigned char current_mode = type & 0xf;
+
+	if (last_mode != current_mode) {
+		lcd_to_default_setting();
+		last_mode = current_mode;
+	}
+
+	switch (type & 0x0f) {
 	case PROTOCOL_TYPE_CLEAR:
-		lcd_flush();
-		display_zero();
+		lcd_to_default_setting();
+		break;
+	case PROTOCOL_TYPE_ENG:
+		handle_english_put(buf, len);
+		break;
+	case PROTOCOL_TYPE_HZ:
+		handle_hanzi_put(buf, len, type);
+		break;
+	default:
 		break;
 	}
 }
 
-static unsigned char frame_buf[FRAME_DATA_MAX_LEN];
-
+#define TIME_RECALCATE 1000
 void handle_protocol_data(unsigned char c)
 {
 	static int idx;
 	static int type;
 	static int len;
+	static unsigned int last_ms;
+	unsigned int current;
+
+	current = HAL_GetTick();
+	if (current - last_ms > TIME_RECALCATE)
+		idx = 0;
+	last_ms = current;
 
 	switch (idx) {
 	case 0:
@@ -127,26 +178,30 @@ void handle_protocol_data(unsigned char c)
 		break;
 	case 3:
 		len = c;
-		if (c == 0) {
+		if (len > FRAME_DATA_MAX_LEN) {
 			idx = 0;
-			handle_zero_data(type);
+			break;
+		}
+		if (len == 0) {
+			idx = 0;
+			goto data_handle;
 			break;
 		}
 		idx++;
 		break;
 	default:
-		/*
-		 * if ((idx - 3) < len)
-		 *         else
-		 * idx++;
-		 */
+		frame[idx - 4] = c;
+		if ((idx - 3) >= len) {
+			idx = 0;
+			goto data_handle;
+		}
+		idx++;
 		break;
 	}
+
+	return;
+
+data_handle:
+	packet_handle(frame, len, type);
+	return;
 }
-
-
-
-
-
-
-

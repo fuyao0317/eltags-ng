@@ -13,5 +13,9 @@ void lcd_put_char(unsigned char s);
 void lcd_flush(void);
 void lcd_put_string(char *s);
 void lcd_put_size(char *s, int len);
+void Page_set(unsigned char page);
+void Column_set(unsigned char column);
+void OLED_send_data(unsigned char o_data);
+void OLED_start_line_set(unsigned char line);
 
 #endif /* __LCD_H */

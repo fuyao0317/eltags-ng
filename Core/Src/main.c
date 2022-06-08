@@ -67,7 +67,7 @@ unsigned char usb_buf[RX_DATA_SIZE];
 unsigned char *pusb_rec = usb_buf;
 unsigned char *pusb_handle = usb_buf;
 
-static void app_handle_usb_data(unsigned char s)
+void app_handle_usb_data(unsigned char s)
 {
 	if (s == 0) {
 		lcd_flush();
@@ -134,10 +134,13 @@ int main(void)
 		  pusb_handle = next_pusb_handle;
 
 		  /* handle_protocol_data(byte); */
-		  app_handle_usb_data(byte);
+		  handle_protocol_data(byte);
+
+		  if (pusb_rec == pusb_handle)
+			  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 	  }
 
-	  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
 
 	  /* HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); */
 	  /*

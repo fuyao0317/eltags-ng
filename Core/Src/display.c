@@ -147,7 +147,7 @@ static void packet_handle(unsigned char *buf, unsigned char len, unsigned char t
 }
 
 #define TIME_RECALCATE 1000
-void handle_protocol_data(unsigned char c)
+void handle_protocol_data_v1(unsigned char c)
 {
 	static int idx;
 	static int type;
@@ -204,4 +204,16 @@ void handle_protocol_data(unsigned char c)
 data_handle:
 	packet_handle(frame, len, type);
 	return;
+}
+
+void handle_protocol_data(unsigned char c)
+{
+	static int first = 1;
+
+	if (first) {
+		lcd_flush();
+		first = 0;
+	}
+
+	lcd_put_char(c);
 }

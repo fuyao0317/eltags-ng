@@ -110,7 +110,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   OLED_init();
   lcd_flush();
-  lcd_put_string("CYG PLATFORM\n\nLINUX DEBUG TOOLS\n\nBY: YAO");
+  lcd_put_string("CYG PLATFORM\n\nLINUX DEBUG TOOLS\n\nBY: FUYAO");
 
   /* USER CODE END 2 */
 

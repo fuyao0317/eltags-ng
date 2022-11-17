@@ -62,11 +62,11 @@
   * @{
   */
 
-#define USBD_VID		     0x9347
+#define USBD_VID		     0x10d2
 #define USBD_LANGID_STRING	     1033
 #define USBD_MANUFACTURER_STRING     "ShengJian Technology"
 #define USBD_MOD_STRING		     "WINUSB"
-#define USBD_PID_FS		     0x2222
+#define USBD_PID_FS		     0x0001
 #define USBD_PRODUCT_STRING_FS	     "eltags"
 #define USBD_CONFIGURATION_STRING_FS "Config"
 #define USBD_INTERFACE_STRING_FS     "Interface"
